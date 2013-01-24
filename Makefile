@@ -26,7 +26,7 @@ html:
 
 examples: src/etaExample.cpp include/ezETAProgressBar.hpp
 	mkdir -p bin
-	g++-mp-4.7 -std=c++11 -I include src/etaExample.cpp -o bin/etaExample
+	g++-mp-4.7 -DHAVE_ANSI_TERM -std=c++11 -I include src/etaExample.cpp -o bin/etaExample
 	bin/etaExample
 		
 memtest:

@@ -15,6 +15,7 @@ v2.0.2 20130123 rob Switched over to C++11 timer facilities
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -39,7 +40,7 @@ public:
 	ezETAProgressBar(unsigned int _n=0) : n(_n), pct(0), cur(0), width(80) {}
 	void reset( uint64_t _n ) { n = _n; pct = 0; cur = 0; }
 	void start() { 
-		startTime = system_clock::now();//osQueryPerfomance();
+		startTime = system_clock::now();
 		setPct(0); 
 	}
 	
@@ -51,51 +52,40 @@ public:
 
 	std::string durationString( duration t ) {
 		using std::chrono::duration_cast;
-		/*
-		typedef std::chrono::duration<double, std::ratio<86400>> hours;
-		typedef std::chrono::duration<double, std::ratio<3600>> hours;
-		typedef std::chrono::duration<double, std::ratio<60>> minutes;
-		typedef std::chrono::duration<double, std::ratio<1>> seconds;
-		*/
-	
 		typedef std::chrono::duration<size_t, std::ratio<86400>> days;
 		using std::chrono::hours;
 		using std::chrono::minutes;
 		using std::chrono::seconds;
 
-		char tmp[8];
-		std::string out;
+		std::stringstream out(std::stringstream::out);
+		//std::string out;
 		
 		if ( t >= days(1) ) {
 			auto numDays = duration_cast<days>(t);
-			sprintf(tmp, "%dd ", numDays.count());
-			out += tmp;
+			out << numDays.count() << "d ";
 			t -= numDays;
 		}
 		
 		if ( t >= hours(1) ) {
 			auto numHours = duration_cast<hours>(t);
-			sprintf(tmp, "%dh ", numHours.count());
-			out += tmp;
+			out << numHours.count() << "h ";
 			t -= numHours;
 		}
 
 		if ( t >= minutes(1) ) { 
 			auto numMins = duration_cast<minutes>(t);
-			sprintf(tmp, "%dm ", numMins.count());
-			out += tmp;
+			out << numMins.count() << "m ";
 			t -= numMins;
 		}
 		
 		if ( t >= seconds(1) ) {
 			auto numSecs = duration_cast<seconds>(t);
-			sprintf(tmp, "%ds", numSecs);
-			out += tmp;
+			out << numSecs.count() << "s";
 		}
 		
-		if (out.empty()) { out = "0s"; }
-			
-		return out;
+		std::string tstring = out.str();
+		if (tstring.empty()) { tstring = "0s"; }
+		return tstring;
 	}
 	
 	// Set 0.0-1.0, where 1.0 equals 100%.
@@ -113,12 +103,25 @@ public:
 		int ntics = (int)(nticsMax*Pct);
 		std::string out(pctstr);
 		out.append(" [");
-		out.append(ntics,'#');
+
+		#ifdef HAVE_ANSI_TERM
+		// Green!
+		out.append("\e[0;32m");
+		#endif //HAVE_ANSI_TERM
+
+		out.append(std::max(0,ntics-1),'=');
+		out.append( Pct == 1.0 ? "=" : ">");
 		out.append(nticsMax-ntics,' ');
+
+		#ifdef HAVE_ANSI_TERM
+		// Not-Green :(
+		out.append("\e[0m");
+		#endif //HAVE_ANSI_TERM
+
 		out.append("] ");
 		out.append((Pct<1.0) ? "ETA " : "in ");
 
-		// Seconds.
+		// Time since we started the progress bar (or reset)
 		auto dt = endTime-startTime;
 
 		std::string tstr;
