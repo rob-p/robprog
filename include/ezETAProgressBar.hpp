@@ -50,6 +50,17 @@ public:
 		setPct( static_cast<double>(cur)/n );
 	};
 
+	void operator+=( const unsigned int d ) {
+		if (cur >= n) return;
+		cur += d;
+		setPct(static_cast<double>(cur)/n);
+	};
+
+	void done() {
+		cur = n;
+		setPct(1.0);
+	}
+
 	std::string durationString( duration t ) {
 		using std::chrono::duration_cast;
 		typedef std::chrono::duration<size_t, std::ratio<86400>> days;
@@ -100,7 +111,7 @@ public:
 
 		// Compute how many tics we can display.
 		int nticsMax = (width-27);
-		int ntics = (int)(nticsMax*Pct);
+		int ntics = std::max(1, static_cast<int>(nticsMax*Pct));
 		std::string out(pctstr);
 		out.append(" [");
 
@@ -151,9 +162,16 @@ public:
 			}
 		}
 
+		size_t effLen = out.length();
+	    #ifdef HAVE_ANSI_TERM
+		 effLen -= 11;
+		#endif //HAVE_ANSI_TERM
+
 		// Pad end with spaces to overwrite previous string that may have been longer.
-		if (out.size() < width)
-			out.append(width-out.size(),' ');
+		if (effLen < width) {
+			out.append(width-effLen,' ');
+		}
+
 			
 		out.append("\r");
 		std::cout << out;

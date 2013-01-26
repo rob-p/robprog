@@ -16,7 +16,7 @@ int main() {
 	#ifdef WIN32
 		Sleep(1000);
 	#else
-		sleep(1);
+		usleep(500000);
 	#endif
 	}
 
